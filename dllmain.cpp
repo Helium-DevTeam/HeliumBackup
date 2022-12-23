@@ -1,11 +1,6 @@
 ﻿#include "pch.h"
 #include "Helium.h"
 
-int extension_metadata()
-{
-	return 0;
-}
-
 int on_self_load()
 {
 	auto root = Helium::command_dispatcher.Register("#hback");
@@ -17,5 +12,6 @@ int on_self_load()
 
 int on_load()
 {
-	
+	const auto server_ptr = Helium::helium_server_manager.GetServer("test1");
+	auto dir = server_ptr->GetServerDirectory();
 }
