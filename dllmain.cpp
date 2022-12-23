@@ -1,20 +1,21 @@
-﻿// dllmain.cpp : 定义 DLL 应用程序的入口点。
-#include "pch.h"
+﻿#include "pch.h"
 #include "Helium.h"
 
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-                     )
+int extension_metadata()
 {
-    switch (ul_reason_for_call)
-    {
-    case DLL_PROCESS_ATTACH:
-    case DLL_THREAD_ATTACH:
-    case DLL_THREAD_DETACH:
-    case DLL_PROCESS_DETACH:
-        break;
-    }
-    return TRUE;
+	return 0;
 }
 
+int on_self_load()
+{
+	auto root = Helium::command_dispatcher.Register("#hback");
+	auto create = root.Then<Literal>("create");
+	auto restore = root.Then<Literal>("restore");
+	auto list = root.Then<Literal>("list");
+	auto del = root.Then<Literal>("delete");
+}
+
+int on_load()
+{
+	
+}
