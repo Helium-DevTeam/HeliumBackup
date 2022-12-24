@@ -55,3 +55,9 @@ HELIUM_EXTENSION_EXPORT int on_self_load()
 	}
 	return 0;
 }
+
+HELIUM_EXTENSION_EXPORT int helium_server_starting(string_view name, list<any> param)
+{
+	logger.debug("helium_server_starting!");
+	return 0;
+}
