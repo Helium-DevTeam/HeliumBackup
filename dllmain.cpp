@@ -35,20 +35,18 @@ HELIUM_EXTENSION_EXPORT int on_self_load()
 	list.Executes(hback_list);
 	auto del = root.Then<Literal>("delete");
 
-	const auto server_ptr = Helium::helium_server_manager.GetServer("helium-server-test1");
-	if (server_ptr) {
-		auto dir = server_ptr->GetServerDirectory();
+	if (const auto server_ptr = Helium::helium_server_manager.GetServer("helium-server-test1")) {
+		const auto dir = server_ptr->GetServerDirectory();
 		logger.debug(dir.string());
 	}
 
-	const auto extension_ptr = Helium::helium_extension_manager.GetExtension("HeliumBackup");
-	if(extension_ptr)
+	if(const auto extension_ptr = Helium::helium_extension_manager.GetExtension("HeliumBackup"))
 	{
-		auto name = extension_ptr->GetExtensionDescription();
+		const auto name = extension_ptr->GetExtensionDescription();
 		logger.debug(name);
 	}
 
-	for(auto& server_pointer : Helium::helium_server_manager.GetServerList())
+	for(const auto& server_pointer : Helium::helium_server_manager.GetServerList())
 	{
 		logger.debug(server_pointer->GetServerName());
 		server_pointer->AutoStartServer();
