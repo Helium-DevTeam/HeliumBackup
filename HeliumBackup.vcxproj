@@ -78,6 +78,7 @@
     <SourcePath>$(VC_SourcePath);D:\Repos\Helium\Helium</SourcePath>
     <PublicModuleDirectories>D:\Repos\Helium\Helium</PublicModuleDirectories>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\extensions</OutDir>
+    <TargetExt>.heliumextension</TargetExt>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnabled>true</VcpkgEnabled>

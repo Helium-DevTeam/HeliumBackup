@@ -11,7 +11,7 @@ Helium::HeliumExtensionLogger logger("HeliumBackup", "Main");
 HELIUM_EXTENSION_EXPORT map<string, string> extension_metadata()
 {
 	return {
-		{"name", "Helium Backup"},
+		{"extension_name", "Helium Backup"},
 		{"author", "Helium DevTeam"},
 		{"url", "https://github.com/Helium-DevTeam/HeliumBackup"},
 		{"description", "A official backup extension for Helium."},
@@ -33,3 +33,12 @@ HELIUM_EXTENSION_EXPORT int on_self_load()
 	logger.info("awa");
 	return 0;
 }
+
+BOOL APIENTRY DllMain( HMODULE hModule,  
+                       DWORD  ul_reason_for_call,  
+                       LPVOID lpReserved  
+                     )  
+{
+	logger.info("Hello Helium Extension World!");
+    return TRUE;  
+}  
