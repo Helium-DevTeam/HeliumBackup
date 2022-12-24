@@ -19,26 +19,39 @@ HELIUM_EXTENSION_EXPORT map<string, string> extension_metadata()
 	};
 }
 
+int hback_list(Helium::HeliumCommandContext& ctx)
+{
+	logger.debug("#hback list!");
+	return 0;
+}
+
 HELIUM_EXTENSION_EXPORT int on_self_load()
 {
+	logger.debug("Hello Helium Extension World!");
 	auto root = Helium::command_dispatcher.Register("#hback");
 	auto create = root.Then<Literal>("create");
 	auto restore = root.Then<Literal>("restore");
 	auto list = root.Then<Literal>("list");
+	list.Executes(hback_list);
 	auto del = root.Then<Literal>("delete");
-	const auto server_ptr = Helium::helium_server_manager.GetServer("test1");
-	auto dir = server_ptr->GetServerDirectory();
+
+	const auto server_ptr = Helium::helium_server_manager.GetServer("helium-server-test1");
+	if (server_ptr) {
+		auto dir = server_ptr->GetServerDirectory();
+		logger.debug(dir.string());
+	}
+
 	const auto extension_ptr = Helium::helium_extension_manager.GetExtension("HeliumBackup");
-	auto d = extension_ptr->GetExtensionPath();
-	logger.info("awa");
+	if(extension_ptr)
+	{
+		auto name = extension_ptr->GetExtensionDescription();
+		logger.debug(name);
+	}
+
+	for(auto& server_pointer : Helium::helium_server_manager.GetServerList())
+	{
+		logger.debug(server_pointer->GetServerName());
+		server_pointer->AutoStartServer();
+	}
 	return 0;
 }
-
-BOOL APIENTRY DllMain( HMODULE hModule,  
-                       DWORD  ul_reason_for_call,  
-                       LPVOID lpReserved  
-                     )  
-{
-	logger.info("Hello Helium Extension World!");
-    return TRUE;  
-}  
