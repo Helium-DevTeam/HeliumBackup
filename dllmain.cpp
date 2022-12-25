@@ -1,12 +1,14 @@
-﻿#include "pch.h"
-#include "Helium.h"
+﻿#include "Helium.h"
 
 #include <map>
+#include <filesystem>
 #include <string>
 
 using namespace std;
+using namespace Helium;
+namespace fs = std::filesystem;
 
-Helium::HeliumExtensionLogger logger("HeliumBackup", "Main");
+HeliumExtensionLogger logger("HeliumBackup", "Main");
 
 HELIUM_EXTENSION_EXPORT map<string, string> extension_metadata()
 {
@@ -19,43 +21,65 @@ HELIUM_EXTENSION_EXPORT map<string, string> extension_metadata()
 	};
 }
 
-int hback_list(Helium::HeliumCommandContext& ctx)
+int hback_list(HeliumCommandContext& ctx)
 {
 	logger.debug("#hback list!");
 	return 0;
 }
 
-HELIUM_EXTENSION_EXPORT int on_self_load()
+int hback_create(HeliumCommandContext& ctx)
 {
-	logger.debug("Hello Helium Extension World!");
-	auto root = Helium::command_dispatcher.Register("#hback");
-	auto create = root.Then<Literal>("create");
-	auto restore = root.Then<Literal>("restore");
-	auto list = root.Then<Literal>("list");
-	list.Executes(hback_list);
-	auto del = root.Then<Literal>("delete");
-
-	if (const auto server_ptr = Helium::helium_server_manager.GetServer("helium-server-test1")) {
-		const auto dir = server_ptr->GetServerDirectory();
-		logger.debug(dir.string());
-	}
-
-	if(const auto extension_ptr = Helium::helium_extension_manager.GetExtension("HeliumBackup"))
-	{
-		const auto name = extension_ptr->GetExtensionDescription();
-		logger.debug(name);
-	}
-
-	for(const auto& server_pointer : Helium::helium_server_manager.GetServerList())
-	{
-		logger.debug(server_pointer->GetServerName());
-		server_pointer->AutoStartServer();
-	}
+	logger.debug("#hback create!");
 	return 0;
 }
 
-HELIUM_EXTENSION_EXPORT int helium_server_starting(string_view name, list<any> param)
+int hback_restore(HeliumCommandContext& ctx)
 {
-	logger.debug("helium_server_starting!");
+	logger.debug("#hback restore!");
+	return 0;
+}
+
+int hback_delete(HeliumCommandContext& ctx)
+{
+	logger.debug("#hback delete!");
+	return 0;
+}
+
+HELIUM_EXTENSION_EXPORT int on_self_load()
+{
+	using enum HeliumCapabilities;
+
+	logger.debug("Hello Helium Extension World!");
+	logger.debug(fs::current_path().string());
+
+	auto root = command_dispatcher.Register("#hback");
+	auto create = root.Then<Literal>("create");
+	auto restore = root.Then<Literal>("restore");
+	auto list = root.Then<Literal>("list");
+	auto del = root.Then<Literal>("delete");
+
+	create.Then<Argument, String>("<backup-name>").Then<Argument, GreedyString>("[comment]").Requires([](HeliumCommandSource& src) -> bool
+	{
+		return HeliumUserManager::CheckCapability(src.GetCapabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
+	}).Executes(hback_create);
+	create.Then<Argument, String>("<backup-name>").Requires([](HeliumCommandSource& src) -> bool
+	{
+		return HeliumUserManager::CheckCapability(src.GetCapabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
+	}).Executes(hback_create);
+	restore.Then<Argument, String>("<backup-name>").Requires([](HeliumCommandSource& src) -> bool
+	{
+		return HeliumUserManager::CheckCapability(src.GetCapabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
+	}).Executes(hback_restore);
+	list.Requires([](HeliumCommandSource& src) -> bool
+	{
+		if(src.GetSource() == CommandSource::PLAYER)
+			logger.debug(src.GetSourceInfo().at("player_name"));
+		return HeliumUserManager::CheckCapability(src.GetCapabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
+	}).Executes(hback_list);
+	del.Then<Argument, String>("<backup-name>").Requires([](HeliumCommandSource& src) -> bool
+	{
+		return HeliumUserManager::CheckCapability(src.GetCapabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
+	}).Executes(hback_delete);
+
 	return 0;
 }
