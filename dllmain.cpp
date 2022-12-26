@@ -10,7 +10,7 @@ using namespace std;
 using namespace helium;
 namespace fs = std::filesystem;
 
-HeliumExtensionLogger logger("HeliumBackup", "Main");
+HeliumExtensionLogger logger("Helium", "Backup");
 
 HELIUM_EXTENSION_EXPORT map<string, string> extension_metadata()
 {
