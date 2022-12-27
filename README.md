@@ -1,4 +1,4 @@
-![](E:\Helium\Helium-Official-Extension%20(1080P).png)
+![Helium-Official-Extension-Banner](https://raw.githubusercontent.com/Helium-DevTeam/Helium/master/HeliumOfficialExtension.png)
 
 # HeliumBackup
 
