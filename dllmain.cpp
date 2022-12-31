@@ -12,7 +12,7 @@ using namespace std;
 using namespace helium;
 namespace fs = std::filesystem;
 
-HeliumExtensionLogger logger("Helium", "Backup");
+helium_extension_logger_c logger("Helium", "Backup");
 
 HELIUM_EXTENSION_EXPORT map<string, string> extension_metadata()
 {
@@ -40,35 +40,31 @@ int hback_create(helium_command_context& ctx)
 	}
 	using namespace std::literals::chrono_literals;
 	const auto server_name = ctx.GetSource().get_source_info()["server_name"];
-	const auto server_ptr = helium_server_manager.GetServer(server_name);
-	fs::path server_save_path = helium_config_manager.get_server_dir() + "/" + server_ptr->GetServerDirectory().string() + "/world";
-	fs::path copy_save_path = helium_config_manager.get_extension_dir() + "/Helium-Backup/" + format("{:%F}-{:%H}-{:%M}-{:%S}"
-		, chrono::system_clock::now(), chrono::system_clock::now(), chrono::system_clock::now(), chrono::system_clock::now());
-	logger.debug("Saving server " + server_name);
-	logger.debug(server_save_path.string());
-	logger.debug(copy_save_path.string());
+	const auto server_wptr = helium_server_manager.get_server(server_name);
+	if (auto server_ptr = server_wptr.lock()) {
+		fs::path server_save_path = helium_config_manager.get_server_dir() + "/" + server_ptr->get_server_directory().string() + "/world";
+		fs::path copy_save_path = helium_config_manager.get_extension_dir() + "/Helium-Backup/" + format("{:%F}-{:%H}-{:%M}-{:%S}"
+			, chrono::system_clock::now(), chrono::system_clock::now(), chrono::system_clock::now(), chrono::system_clock::now());
+		logger.debug("Saving server " + server_name);
+		logger.debug(server_save_path.string());
+		logger.debug(copy_save_path.string());
 
-	error_code ec;
-	try {
-		logger.debug("save-off");
-		server_ptr->SendToServer("/save-off");
-		this_thread::sleep_for(15s);
-		logger.debug("save-all flush");
-		server_ptr->SendToServer("/save-all flush");
-		//this_thread::sleep_for(15s);
-		//logger.debug("copy");
-		//fs::copy(server_save_path, copy_save_path, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
-		this_thread::sleep_for(15s);
-		logger.debug("save-on");
-		server_ptr->SendToServer("/save-on");
+		error_code ec;
+		try {
+			logger.debug("save-off");
+			server_ptr->send_to_server("/save-off");
+			logger.debug("save-all flush");
+			server_ptr->send_to_server("/save-all flush");
+			logger.debug("save-on");
+			server_ptr->send_to_server("/save-on");
+		}
+		catch (fs::filesystem_error& e)
+		{
+			logger.debug("save-on");
+			server_ptr->send_to_server("/save-on");
+			logger.error(e.what());
+		}
 	}
-	catch (fs::filesystem_error& e)
-	{
-		logger.debug("save-on");
-		server_ptr->SendToServer("/save-on");
-		logger.error(e.what());
-	}
-
 	return 0;
 }
 
@@ -101,24 +97,24 @@ HELIUM_EXTENSION_EXPORT int on_self_load()
 		{
 			return helium_user_manager_c::check_capability(src.get_capabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
 		}).Executes(hback_create);
-	create.Then<Argument, String>("<backup-name>").Requires([](helium_command_source_c& src) -> bool
-		{
-			return helium_user_manager_c::check_capability(src.get_capabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
-		}).Executes(hback_create);
-	restore.Then<Argument, String>("<backup-name>").Requires([](helium_command_source_c& src) -> bool
-		{
-			return helium_user_manager_c::check_capability(src.get_capabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
-		}).Executes(hback_restore);
-	list.Requires([](helium_command_source_c& src) -> bool
-		{
-			if (src.get_source() == command_source_e::PLAYER)
-				logger.debug(src.get_source_info().at("player_name"));
-			return helium_user_manager_c::check_capability(src.get_capabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
-		}).Executes(hback_list);
-	del.Then<Argument, String>("<backup-name>").Requires([](helium_command_source_c& src) -> bool
-		{
-			return helium_user_manager_c::check_capability(src.get_capabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
-		}).Executes(hback_delete);
+		create.Then<Argument, String>("<backup-name>").Requires([](helium_command_source_c& src) -> bool
+			{
+				return helium_user_manager_c::check_capability(src.get_capabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
+			}).Executes(hback_create);
+			restore.Then<Argument, String>("<backup-name>").Requires([](helium_command_source_c& src) -> bool
+				{
+					return helium_user_manager_c::check_capability(src.get_capabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
+				}).Executes(hback_restore);
+				list.Requires([](helium_command_source_c& src) -> bool
+					{
+						if (src.get_source() == command_source_e::PLAYER)
+						logger.debug(src.get_source_info().at("player_name"));
+				return helium_user_manager_c::check_capability(src.get_capabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
+					}).Executes(hback_list);
+					del.Then<Argument, String>("<backup-name>").Requires([](helium_command_source_c& src) -> bool
+						{
+							return helium_user_manager_c::check_capability(src.get_capabilities(), HCAP_BASIC_CTL | HCAP_SERVER_CTL);
+						}).Executes(hback_delete);
 
-	return 0;
+						return 0;
 }
