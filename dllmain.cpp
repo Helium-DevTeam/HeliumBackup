@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <string>
 #include <format>
+#include <atomic>
 #include <chrono>
 
 #include <boost/locale.hpp>
@@ -31,6 +32,8 @@ int hback_list(helium_command_context& ctx)
 	return 0;
 }
 
+map<string, atomic<bool>> is_saved_map;
+
 int hback_create(helium_command_context& ctx)
 {
 	if (ctx.GetSource().get_source() != command_source_e::PLAYER)
@@ -41,6 +44,7 @@ int hback_create(helium_command_context& ctx)
 	using namespace std::literals::chrono_literals;
 	const auto server_name = ctx.GetSource().get_source_info()["server_name"];
 	const auto server_wptr = helium_server_manager.get_server(server_name);
+	is_saved_map[server_name] = false;
 	if (auto server_ptr = server_wptr.lock()) {
 		fs::path server_save_path = helium_config_manager.get_server_dir() + "/" + server_ptr->get_server_directory().string() + "/world";
 		fs::path copy_save_path = helium_config_manager.get_extension_dir() + "/Helium-Backup/" + format("{:%F}-{:%H}-{:%M}-{:%S}"
@@ -53,8 +57,13 @@ int hback_create(helium_command_context& ctx)
 		try {
 			logger.debug("save-off");
 			server_ptr->send_to_server("/save-off");
+
 			logger.debug("save-all flush");
 			server_ptr->send_to_server("/save-all flush");
+			while (!is_saved_map[server_name]);
+
+			fs::copy(server_save_path, copy_save_path, fs::copy_options::recursive);
+
 			logger.debug("save-on");
 			server_ptr->send_to_server("/save-on");
 		}
@@ -64,6 +73,19 @@ int hback_create(helium_command_context& ctx)
 			server_ptr->send_to_server("/save-on");
 			logger.error(e.what());
 		}
+	}
+	return 0;
+}
+
+HELIUM_EXTENSION_EXPORT int helium_input_server(string_view event_name, list<any> event_args)
+{
+	if (event_name != "helium.input.server")
+		return 0;
+	auto server_name = any_cast<string>(event_args.front()), server_output = any_cast<string>(event_args.back());
+	logger.debug(server_output);
+	if (server_output.contains("Saved the game"))
+	{
+		is_saved_map[server_name] = true;
 	}
 	return 0;
 }
