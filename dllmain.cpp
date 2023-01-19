@@ -85,6 +85,10 @@ HELIUM_EXTENSION_EXPORT int helium_input_server(string_view event_name, list<any
 	if (event_name != "helium.input.server")
 		return 0;
 	const auto server_name = any_cast<string>(event_args.front()), server_output = any_cast<string>(event_args.back());
+	if (auto ptr = helium_server_manager.get_server(server_name).lock())
+	{
+		ptr->broadcast(server_output);
+	}
 	if (server_output.contains("Saved the game"))
 	{
 		is_saved_map[server_name] = true;
