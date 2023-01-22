@@ -10,7 +10,7 @@
 
 using namespace std;
 using namespace helium;
-namespace fs = std::filesystem;
+namespace sfs = std::filesystem;
 
 helium_extension_logger_c logger("Helium", "Backup");
 
@@ -45,15 +45,17 @@ int hback_create(helium_command_context& ctx)
 	const auto server_wptr = helium_server_manager.get_server(server_name);
 	is_saved_map[server_name] = false;
 	if (auto server_ptr = server_wptr.lock()) {
-		thread create_backup([&]() {
+		server_ptr->send_to_server("/say awa");
 
-			fs::path server_save_path = helium_config_manager.get_server_dir() + "/" + server_ptr->get_server_directory().string() + "/world";
-		fs::path copy_save_path = helium_config_manager.get_extension_dir() + "/Helium-Backup/" + format("{:%F}-{:%H}-{:%M}-{:%S}"
+		const sfs::path server_save_path = helium_config_manager.get_server_dir() + "/" + server_ptr->get_server_directory().string() + "/world";
+		const sfs::path copy_save_path = helium_config_manager.get_extension_dir() + "/Helium-Backup/" + format("{:%F}-{:%H}-{:%M}-{:%S}"
 			, chrono::system_clock::now(), chrono::system_clock::now(), chrono::system_clock::now(), chrono::system_clock::now());
+			sfs::create_directories(copy_save_path);
 		logger.debug("Saving server " + server_name);
 		logger.debug(server_save_path.string());
 		logger.debug(copy_save_path.string());
 
+		thread create_backup([server_ptr, server_name, server_save_path, copy_save_path]() {
 		error_code ec;
 		try {
 			logger.debug("save-off");
@@ -63,12 +65,12 @@ int hback_create(helium_command_context& ctx)
 			server_ptr->send_to_server("/save-all flush");
 
 			while (!is_saved_map[server_name]);
-			fs::copy(server_save_path, copy_save_path, fs::copy_options::recursive);
+			sfs::copy(server_save_path, copy_save_path, sfs::copy_options::recursive);
 
 			logger.debug("save-on");
 			server_ptr->send_to_server("/save-on");
 		}
-		catch (fs::filesystem_error& e)
+		catch (sfs::filesystem_error& e)
 		{
 			logger.debug("save-on");
 			server_ptr->send_to_server("/save-on");
@@ -85,10 +87,6 @@ HELIUM_EXTENSION_EXPORT int helium_input_server(string_view event_name, list<any
 	if (event_name != "helium.input.server")
 		return 0;
 	const auto server_name = any_cast<string>(event_args.front()), server_output = any_cast<string>(event_args.back());
-	if (auto ptr = helium_server_manager.get_server(server_name).lock())
-	{
-		ptr->broadcast(server_output);
-	}
 	if (server_output.contains("Saved the game"))
 	{
 		is_saved_map[server_name] = true;
