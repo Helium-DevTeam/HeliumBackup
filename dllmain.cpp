@@ -65,6 +65,7 @@ int hback_create(helium_command_context& ctx)
 			server_ptr->send_to_server("/save-all flush");
 
 			while (!is_saved_map[server_name]);
+			server_ptr->send_to_server("/say "s + "Saving server...");
 			sfs::copy(server_save_path, copy_save_path, sfs::copy_options::recursive);
 
 			logger.debug("save-on");
@@ -82,11 +83,11 @@ int hback_create(helium_command_context& ctx)
 	return 0;
 }
 
-HELIUM_EXTENSION_EXPORT int helium_input_server(string_view event_name, list<any> event_args)
+HELIUM_EXTENSION_EXPORT int helium_input_server(string_view event_name, unordered_map<string, any> event_args)
 {
 	if (event_name != "helium.input.server")
 		return 0;
-	const auto server_name = any_cast<string>(event_args.front()), server_output = any_cast<string>(event_args.back());
+	const auto server_name = any_cast<string>(event_args["server_name"]), server_output = any_cast<string>(event_args["content"]);
 	if (server_output.contains("Saved the game"))
 	{
 		is_saved_map[server_name] = true;
